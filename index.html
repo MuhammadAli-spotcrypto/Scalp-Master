@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scalp Master - Pro Screener</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+        body { background-color: #0b0e11; color: #eaecef; padding: 20px; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #2b3139; flex-wrap: wrap; gap: 15px; }
+        .header h1 { font-size: 22px; color: #ffffff; letter-spacing: 0.5px; }
+        .header h1 span { color: #fcd535; }
+        
+        .controls { display: flex; gap: 10px; align-items: center; }
+        .btn { background-color: #2b3139; color: #eaecef; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; transition: 0.2s; font-weight: 500; }
+        .btn:hover { background-color: #3b424d; }
+        .btn-primary { background-color: #fcd535; color: #181a20; font-weight: 600; }
+        .btn-primary:hover { background-color: #e5c02a; }
+        
+        .status { font-size: 13px; color: #0ecb81; display: flex; align-items: center; gap: 8px; font-weight: 500; }
+        .status-dot { width: 8px; height: 8px; background-color: #0ecb81; border-radius: 50%; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(14, 203, 129, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(14, 203, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(14, 203, 129, 0); } }
+
+        .category { margin-bottom: 30px; background-color: #12161b; padding: 15px; border-radius: 8px; border: 1px solid #1e2329; }
+        .category-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; padding-left: 10px; border-left: 3px solid; }
+        .category-title { display: flex; align-items: center; gap: 10px; }
+        .category-title h2 { font-size: 16px; letter-spacing: 0.3px; }
+        .coin-count { font-size: 12px; color: #848e9c; background: #1e2329; padding: 4px 8px; border-radius: 12px; }
+
+        /* Category Accents */
+        #cat-ict .category-header { border-left-color: #8b5cf6; }
+        #cat-golden .category-header { border-left-color: #fcd535; }
+        #cat-v1 .category-header { border-left-color: #0ecb81; }
+        #cat-neutral .category-header { border-left-color: #848e9c; }
+        #cat-bullish .category-header { border-left-color: #2970ff; }
+        #cat-oversold .category-header { border-left-color: #f6465d; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 10px; }
+
+        .coin-card { text-decoration: none; border-radius: 6px; padding: 10px 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #2b3139; cursor: pointer; transition: all 0.2s ease-in-out; }
+        .coin-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; letter-spacing: 0.5px; }
+        
+        .coin-data { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+        .coin-rsi { font-size: 11px; font-weight: 500; opacity: 0.9; transition: color 0.3s; }
+        .coin-change { font-size: 11px; font-weight: 700; transition: color 0.3s; }
+        
+        .change-up { color: #0ecb81; }
+        .change-down { color: #f6465d; }
+
+        /* Card Styles */
+        .card-ict { background: linear-gradient(145deg, #2e1065, #170b3b); border-color: #5b21b6; color: #c4b5fd; }
+        .card-ict:hover { border-color: #8b5cf6; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2); transform: translateY(-2px); }
+        .card-ict .coin-name { color: #e6d5ff; }
+
+        .card-golden { background: linear-gradient(145deg, #332700, #221a00); border-color: #4d3a00; color: #fcd535; }
+        .card-golden:hover { border-color: #fcd535; box-shadow: 0 4px 12px rgba(252, 213, 53, 0.15); transform: translateY(-2px); }
+        .card-golden .coin-name { color: #fff0b3; }
+        
+        .card-v1 { background: linear-gradient(145deg, #14281d, #0d1a13); border-color: #1a422b; color: #0ecb81; }
+        .card-v1:hover { border-color: #0ecb81; box-shadow: 0 4px 12px rgba(14, 203, 129, 0.15); transform: translateY(-2px); }
+        .card-v1 .coin-name { color: #e0f9ec; }
+        
+        .card-neutral { background: linear-gradient(145deg, #1e2329, #15181c); border-color: #2b3139; color: #848e9c; }
+        .card-neutral:hover { border-color: #848e9c; box-shadow: 0 4px 12px rgba(132, 142, 156, 0.15); transform: translateY(-2px); }
+        .card-neutral .coin-name { color: #eaecef; }
+        
+        .card-bullish { background: linear-gradient(145deg, #101c38, #0a1122); border-color: #182b52; color: #5b9cf6; }
+        .card-bullish:hover { border-color: #5b9cf6; box-shadow: 0 4px 12px rgba(91, 156, 246, 0.15); transform: translateY(-2px); }
+        .card-bullish .coin-name { color: #dce7fa; }
+        
+        .card-oversold { background: linear-gradient(145deg, #2e1519, #1f0e11); border-color: #4a1c22; color: #f6465d; }
+        .card-oversold:hover { border-color: #f6465d; box-shadow: 0 4px 12px rgba(246, 70, 93, 0.15); transform: translateY(-2px); }
+        .card-oversold .coin-name { color: #fbe4e7; }
+
+        #loading { text-align: center; color: #848e9c; padding: 60px; font-size: 16px; letter-spacing: 0.5px; }
+        .spinner-text { display: block; margin-top: 10px; color: #fcd535; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Scalp <span>Master</span></h1>
+        <div class="controls">
+            <div class="status" id="status-indicator">
+                <div class="status-dot"></div>
+                <span id="update-time">System Ready</span>
+            </div>
+            <button class="btn" onclick="initDashboard()">🔄 Rescan Markets</button>
+            <button class="btn btn-primary" onclick="refreshRSIValues(true)">⚡ Update RSI & Sort</button>
+        </div>
+    </div>
+
+    <div id="loading">
+        Connecting to Binance API...
+        <span class="spinner-text" id="loading-subtext">Fetching live data for ALL active spot pairs. Please wait...</span>
+    </div>
+
+    <div id="dashboard" style="display: none;">
+        
+        <div class="category" id="cat-ict" style="display: none;">
+            <div class="category-header">
+                <div class="category-title">
+                    <h2>🔮 ICT Based (Double 1% Liq Sweep + RSI 30-42)</h2>
+                </div>
+                <span class="coin-count" id="count-ict">0 coins</span>
+            </div>
+            <div class="grid" id="grid-ict"></div>
+        </div>
+
+        <div class="category" id="cat-golden">
+            <div class="category-header">
+                <div class="category-title">
+                    <h2>🌟 Golden Setup (1H & 1D Up + 30m Momentum)</h2>
+                </div>
+                <span class="coin-count" id="count-golden">0 coins</span>
+            </div>
+            <div class="grid" id="grid-golden"></div>
+        </div>
+
+        <div class="category" id="cat-v1">
+            <div class="category-header">
+                <div class="category-title">
+                    <h2>⚡ V1 Method (RSI 50-60)</h2>
+                </div>
+                <span class="coin-count" id="count-v1">0 coins</span>
+            </div>
+            <div class="grid" id="grid-v1"></div>
+        </div>
+
+        <div class="category" id="cat-neutral">
+            <div class="category-header">
+                <div class="category-title"><h2>⚖️ Neutral (RSI 42-49.99)</h2></div>
+                <span class="coin-count" id="count-neutral">0 coins</span>
+            </div>
+            <div class="grid" id="grid-neutral"></div>
+        </div>
+
+        <div class="category" id="cat-bullish">
+            <div class="category-header">
+                <div class="category-title"><h2>🔍 Hidden Bullish (RSI 30-41.99)</h2></div>
+                <span class="coin-count" id="count-bullish">0 coins</span>
+            </div>
+            <div class="grid" id="grid-bullish"></div>
+        </div>
+
+        <div class="category" id="cat-oversold">
+            <div class="category-header">
+                <div class="category-title"><h2>📉 Oversold (RSI 10-29.99)</h2></div>
+                <span class="coin-count" id="count-oversold">0 coins</span>
+            </div>
+            <div class="grid" id="grid-oversold"></div>
+        </div>
+    </div>
+
+    <script>
+        let trackedSymbols = []; 
+        let refreshCounter = 5; 
+
+        function calculateWildersRSI(closes) {
+            if (closes.length < 15) return null;
+            let gains = 0, losses = 0;
+            for (let i = 1; i <= 14; i++) {
+                let diff = closes[i] - closes[i - 1];
+                if (diff > 0) gains += diff;
+                else losses -= diff; 
+            }
+            let avgGain = gains / 14;
+            let avgLoss = losses / 14;
+
+            for (let i = 15; i < closes.length; i++) {
+                let diff = closes[i] - closes[i - 1];
+                let currentGain = diff > 0 ? diff : 0;
+                let currentLoss = diff < 0 ? Math.abs(diff) : 0;
+                avgGain = ((avgGain * 13) + currentGain) / 14;
+                avgLoss = ((avgLoss * 13) + currentLoss) / 14;
+            }
+
+            if (avgLoss === 0) return 100;
+            let rs = avgGain / avgLoss;
+            return parseFloat((100 - (100 / (1 + rs))).toFixed(2)); 
+        }
+
+        function calculateSMA(closes, period = 20) {
+            if (closes.length < period) return 0;
+            let sum = 0;
+            for (let i = closes.length - period; i < closes.length; i++) {
+                sum += closes[i];
+            }
+            return sum / period;
+        }
+
+        function checkICTSetup(klines) {
+            if (klines.length < 10) return false;
+            let i = klines.length - 1;
+
+            const isGreen = (index) => parseFloat(klines[index][4]) >= parseFloat(klines[index][1]);
+            const getHigh = (index) => parseFloat(klines[index][2]);
+            const getLow = (index) => parseFloat(klines[index][3]);
+
+            if (isGreen(i)) return false; 
+            while (i >= 0 && !isGreen(i)) i--;
+            if (i < 0) return false;
+
+            let g1High = getHigh(i), g1Low = getLow(i), g1Count = 0;
+            while (i >= 0 && isGreen(i)) {
+                if (getHigh(i) > g1High) g1High = getHigh(i);
+                if (getLow(i) < g1Low) g1Low = getLow(i);
+                g1Count++; i--;
+            }
+            if (g1Count === 0 || i < 0) return false;
+            if ((((g1High - g1Low) / g1Low) * 100) < 1.0) return false; 
+
+            let rCount = 0;
+            while (i >= 0 && !isGreen(i)) { rCount++; i--; }
+            if (rCount === 0 || i < 0) return false;
+
+            let g2High = getHigh(i), g2Low = getLow(i), g2Count = 0;
+            while (i >= 0 && isGreen(i)) {
+                if (getHigh(i) > g2High) g2High = getHigh(i);
+                if (getLow(i) < g2Low) g2Low = getLow(i);
+                g2Count++; i--;
+            }
+            if (g2Count === 0) return false;
+            if ((((g2High - g2Low) / g2Low) * 100) < 1.0) return false; 
+
+            return true;
+        }
+
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+
+        async function initDashboard() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('dashboard').style.display = 'none';
+                document.getElementById('update-time').innerText = "Scanning All Markets...";
+                document.getElementById('loading-subtext').innerText = "Filtering active spot pairs...";
+                
+                const infoRes = await fetch('https://api.binance.com/api/v3/exchangeInfo');
+                const info = await infoRes.json();
+                
+                const activeSymbols = new Set();
+                info.symbols.forEach(s => {
+                    if (s.status === 'TRADING' && s.isSpotTradingAllowed) {
+                        activeSymbols.add(s.symbol);
+                    }
+                });
+
+                const tickerRes = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+                const tickers = await tickerRes.json();
+                
+                trackedSymbols = tickers
+                    .filter(t => 
+                        t.symbol.endsWith('USDT') && 
+                        activeSymbols.has(t.symbol) && 
+                        !t.symbol.includes('UPUSDT') && 
+                        !t.symbol.includes('DOWNUSDT') &&
+                        !t.symbol.includes('BULLUSDT') &&
+                        !t.symbol.includes('BEARUSDT')
+                    )
+                    .sort((a, b) => parseFloat(b.quoteVolume) - parseFloat(a.quoteVolume))
+                    .map(t => t.symbol);
+
+                await refreshRSIValues(true);
+            } catch (error) {
+                console.error("Init Error:", error);
+                document.getElementById('update-time').innerText = "Connection Failed!";
+                document.getElementById('loading-subtext').innerText = "Network Error. Please try again.";
+            }
+        }
+
+        async function checkDailyTrend(symbol) {
+            try {
+                const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1d&limit=21`);
+                const klines = await res.json();
+                const closes = klines.map(k => parseFloat(k[4]));
+                const lastClose = closes[closes.length - 1];
+                const sma20 = calculateSMA(closes, 20);
+                return lastClose > sma20; 
+            } catch (e) { return false; }
+        }
+
+        async function get30mRSI(symbol) {
+            try {
+                const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=30m&limit=250`);
+                const klines = await res.json();
+                const closes = klines.map(k => parseFloat(k[4]));
+                return calculateWildersRSI(closes);
+            } catch (e) { return 0; }
+        }
+
+        async function refreshRSIValues(forceFullRefresh = false) {
+            if (forceFullRefresh) {
+                refreshCounter = 5; 
+            }
+
+            try {
+                if (document.getElementById('dashboard').style.display === 'none') {
+                    document.getElementById('loading-subtext').innerText = `Calculating ICT Logic and Momentum for ${trackedSymbols.length} coins...`;
+                }
+                
+                let coinsData = [];
+                const chunkSize = 25; 
+
+                for (let i = 0; i < trackedSymbols.length; i += chunkSize) {
+                    const chunk = trackedSymbols.slice(i, i + chunkSize);
+                    
+                    const promises = chunk.map(async (symbol) => {
+                        try {
+                            const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1h&limit=250`);
+                            const klines = await res.json();
+                            if (klines.length < 20) return null;
+                            
+                            const closes = klines.map(k => parseFloat(k[4])); 
+                            const rsi1H = calculateWildersRSI(closes);
+                            
+                            let currentClose = parseFloat(klines[klines.length - 1][4]);
+                            let previousClose = parseFloat(klines[klines.length - 2][4]);
+                            let changePercent = ((currentClose - previousClose) / previousClose) * 100;
+                            
+                            const lastClose = closes[closes.length - 1];
+                            const sma20_1H = calculateSMA(closes, 20);
+                            
+                            let is1HTrendUp = lastClose > sma20_1H;
+                            let isGolden = false;
+                            
+                            // ICT LOGIC WITH RSI 30-42 CONDITION
+                            let isICT = false;
+                            if (rsi1H >= 30 && rsi1H <= 42) {
+                                isICT = checkICTSetup(klines);
+                            }
+
+                            if (rsi1H >= 50 && rsi1H <= 60 && is1HTrendUp) {
+                                let is1DTrendUp = await checkDailyTrend(symbol);
+                                if(is1DTrendUp) {
+                                    let rsi30m = await get30mRSI(symbol);
+                                    if (rsi30m > rsi1H) {
+                                        isGolden = true;
+                                    }
+                                }
+                            }
+
+                            return { 
+                                name: symbol.replace('USDT', ''), 
+                                symbol: symbol,
+                                rsi: rsi1H, 
+                                change: changePercent,
+                                isGolden: isGolden,
+                                isICT: isICT
+                            };
+                        } catch (e) { return null; }
+                    });
+
+                    const results = await Promise.all(promises);
+                    coinsData.push(...results.filter(r => r !== null));
+                    await delay(150); 
+                }
+
+                refreshCounter++;
+
+                if (refreshCounter >= 5) {
+                    renderDashboard(coinsData);
+                    refreshCounter = 0;
+                    const timeString = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    document.getElementById('update-time').innerText = `Live - Sorted at ${timeString}`;
+                } else {
+                    updateValuesOnly(coinsData);
+                    const timeString = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    let minsLeft = 5 - refreshCounter;
+                    document.getElementById('update-time').innerText = `Live - Updated ${timeString} (Sort in ${minsLeft}m)`;
+                }
+
+            } catch (error) {
+                console.error("Refresh Error:", error);
+                document.getElementById('update-time').innerText = "Sync Error!";
+            }
+        }
+
+        function updateValuesOnly(coins) {
+            coins.forEach(coin => {
+                let rsiElement = document.getElementById(`rsi-${coin.symbol}`);
+                let changeElement = document.getElementById(`change-${coin.symbol}`);
+                
+                if (rsiElement && changeElement) {
+                    rsiElement.innerText = `RSI: ${coin.rsi.toFixed(1)}`;
+                    
+                    let changeClass = coin.change >= 0 ? 'change-up' : 'change-down';
+                    let changeIcon = coin.change >= 0 ? '▲' : '▼';
+                    let changeText = Math.abs(coin.change).toFixed(2) + '%';
+                    
+                    changeElement.className = `coin-change ${changeClass}`;
+                    changeElement.innerText = `${changeIcon} ${changeText}`;
+                }
+            });
+        }
+
+        function renderDashboard(coins) {
+            let ict = [], golden = [], v1 = [], neutral = [], bullish = [], oversold = [];
+
+            coins.forEach(coin => {
+                let rsi = coin.rsi;
+                if (coin.isICT) ict.push(coin);
+                else if (coin.isGolden) golden.push(coin);
+                else if (rsi >= 50 && rsi <= 60) v1.push(coin);
+                else if (rsi >= 42 && rsi < 50) neutral.push(coin);
+                else if (rsi >= 30 && rsi < 42) bullish.push(coin);
+                else if (rsi >= 10 && rsi < 30) oversold.push(coin);
+            });
+
+            ict.sort((a, 
