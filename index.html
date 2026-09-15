@@ -324,7 +324,6 @@
                             let is1HTrendUp = lastClose > sma20_1H;
                             let isGolden = false;
                             
-                            // ICT LOGIC WITH RSI 30-42 CONDITION
                             let isICT = false;
                             if (rsi1H >= 30 && rsi1H <= 42) {
                                 isICT = checkICTSetup(klines);
@@ -375,8 +374,7 @@
                 document.getElementById('update-time').innerText = "Sync Error!";
             }
         }
-
-        function updateValuesOnly(coins) {
+                function updateValuesOnly(coins) {
             coins.forEach(coin => {
                 let rsiElement = document.getElementById(`rsi-${coin.symbol}`);
                 let changeElement = document.getElementById(`change-${coin.symbol}`);
@@ -407,4 +405,58 @@
                 else if (rsi >= 10 && rsi < 30) oversold.push(coin);
             });
 
-            ict.sort((a, 
+            ict.sort((a, b) => b.rsi - a.rsi);
+            golden.sort((a, b) => b.rsi - a.rsi);
+            v1.sort((a, b) => b.rsi - a.rsi);
+            neutral.sort((a, b) => b.rsi - a.rsi);
+            bullish.sort((a, b) => b.rsi - a.rsi);
+            oversold.sort((a, b) => b.rsi - a.rsi);
+
+            const generateHTML = (arr, cardClass) => {
+                return arr.map(coin => {
+                    let changeClass = coin.change >= 0 ? 'change-up' : 'change-down';
+                    let changeIcon = coin.change >= 0 ? '▲' : '▼';
+                    let changeText = Math.abs(coin.change).toFixed(2) + '%';
+
+                    return `
+                        <a href="https://www.tradingview.com/chart/?symbol=BINANCE:${coin.symbol}" target="_blank" class="coin-card ${cardClass}">
+                            <span class="coin-name">${coin.name}</span>
+                            <div class="coin-data">
+                                <span class="coin-rsi" id="rsi-${coin.symbol}">RSI: ${coin.rsi.toFixed(1)}</span>
+                                <span class="coin-change ${changeClass}" id="change-${coin.symbol}">${changeIcon} ${changeText}</span>
+                            </div>
+                        </a>
+                    `;
+                }).join('');
+            };
+
+            document.getElementById('grid-ict').innerHTML = generateHTML(ict, 'card-ict');
+            document.getElementById('count-ict').innerText = `${ict.length} coins`;
+            
+            document.getElementById('cat-ict').style.display = ict.length > 0 ? 'block' : 'none';
+
+            document.getElementById('grid-golden').innerHTML = generateHTML(golden, 'card-golden');
+            document.getElementById('count-golden').innerText = `${golden.length} coins`;
+
+            document.getElementById('grid-v1').innerHTML = generateHTML(v1, 'card-v1');
+            document.getElementById('count-v1').innerText = `${v1.length} coins`;
+
+            document.getElementById('grid-neutral').innerHTML = generateHTML(neutral, 'card-neutral');
+            document.getElementById('count-neutral').innerText = `${neutral.length} coins`;
+
+            document.getElementById('grid-bullish').innerHTML = generateHTML(bullish, 'card-bullish');
+            document.getElementById('count-bullish').innerText = `${bullish.length} coins`;
+
+            document.getElementById('grid-oversold').innerHTML = generateHTML(oversold, 'card-oversold');
+            document.getElementById('count-oversold').innerText = `${oversold.length} coins`;
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+        }
+
+        initDashboard();
+        
+        setInterval(() => { refreshRSIValues(false); }, 60000);
+    </script>
+</body>
+</html>
