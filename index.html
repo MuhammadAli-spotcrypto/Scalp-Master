@@ -380,7 +380,8 @@
                 let changeElement = document.getElementById(`change-${coin.symbol}`);
                 
                 if (rsiElement && changeElement) {
-                    rsiElement.innerText = `RSI: ${coin.rsi.toFixed(1)}`;
+                    // Yahan toFixed(2) kar diya gaya hai
+                    rsiElement.innerText = `RSI: ${coin.rsi.toFixed(2)}`;
                     
                     let changeClass = coin.change >= 0 ? 'change-up' : 'change-down';
                     let changeIcon = coin.change >= 0 ? '▲' : '▼';
@@ -422,7 +423,8 @@
                         <a href="https://www.tradingview.com/chart/?symbol=BINANCE:${coin.symbol}" target="_blank" class="coin-card ${cardClass}">
                             <span class="coin-name">${coin.name}</span>
                             <div class="coin-data">
-                                <span class="coin-rsi" id="rsi-${coin.symbol}">RSI: ${coin.rsi.toFixed(1)}</span>
+                                <!-- Yahan bhi toFixed(2) kar diya gaya hai -->
+                                <span class="coin-rsi" id="rsi-${coin.symbol}">RSI: ${coin.rsi.toFixed(2)}</span>
                                 <span class="coin-change ${changeClass}" id="change-${coin.symbol}">${changeIcon} ${changeText}</span>
                             </div>
                         </a>
