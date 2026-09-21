@@ -28,11 +28,9 @@
         .category-title h2 { font-size: 16px; letter-spacing: 0.3px; }
         .coin-count { font-size: 12px; color: #848e9c; background: #1e2329; padding: 4px 8px; border-radius: 12px; }
 
-        /* Category Accents */
         #cat-ict .category-header { border-left-color: #8b5cf6; }
         #cat-golden .category-header { border-left-color: #fcd535; }
         #cat-v1 .category-header { border-left-color: #0ecb81; }
-        #cat-neutral .category-header { border-left-color: #848e9c; }
         #cat-bullish .category-header { border-left-color: #2970ff; }
         #cat-oversold .category-header { border-left-color: #f6465d; }
 
@@ -48,7 +46,6 @@
         .change-up { color: #0ecb81; }
         .change-down { color: #f6465d; }
 
-        /* Card Styles */
         .card-ict { background: linear-gradient(145deg, #2e1065, #170b3b); border-color: #5b21b6; color: #c4b5fd; }
         .card-ict:hover { border-color: #8b5cf6; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2); transform: translateY(-2px); }
         .card-ict .coin-name { color: #e6d5ff; }
@@ -60,10 +57,6 @@
         .card-v1 { background: linear-gradient(145deg, #14281d, #0d1a13); border-color: #1a422b; color: #0ecb81; }
         .card-v1:hover { border-color: #0ecb81; box-shadow: 0 4px 12px rgba(14, 203, 129, 0.15); transform: translateY(-2px); }
         .card-v1 .coin-name { color: #e0f9ec; }
-        
-        .card-neutral { background: linear-gradient(145deg, #1e2329, #15181c); border-color: #2b3139; color: #848e9c; }
-        .card-neutral:hover { border-color: #848e9c; box-shadow: 0 4px 12px rgba(132, 142, 156, 0.15); transform: translateY(-2px); }
-        .card-neutral .coin-name { color: #eaecef; }
         
         .card-bullish { background: linear-gradient(145deg, #101c38, #0a1122); border-color: #182b52; color: #5b9cf6; }
         .card-bullish:hover { border-color: #5b9cf6; box-shadow: 0 4px 12px rgba(91, 156, 246, 0.15); transform: translateY(-2px); }
@@ -126,14 +119,6 @@
                 <span class="coin-count" id="count-v1">0 coins</span>
             </div>
             <div class="grid" id="grid-v1"></div>
-        </div>
-
-        <div class="category" id="cat-neutral">
-            <div class="category-header">
-                <div class="category-title"><h2>⚖️ Neutral (RSI 42-49.99)</h2></div>
-                <span class="coin-count" id="count-neutral">0 coins</span>
-            </div>
-            <div class="grid" id="grid-neutral"></div>
         </div>
 
         <div class="category" id="cat-bullish">
@@ -288,15 +273,14 @@
                 return calculateWildersRSI(closes);
             } catch (e) { return 0; }
         }
-
-        async function refreshRSIValues(forceFullRefresh = false) {
+                async function refreshRSIValues(forceFullRefresh = false) {
             if (forceFullRefresh) {
                 refreshCounter = 5; 
             }
 
             try {
                 if (document.getElementById('dashboard').style.display === 'none') {
-                    document.getElementById('loading-subtext').innerText = `Calculating ICT Logic and Momentum for ${trackedSymbols.length} coins...`;
+                    document.getElementById('loading-subtext').innerText = `Calculating logic for ${trackedSymbols.length} coins...`;
                 }
                 
                 let coinsData = [];
@@ -374,13 +358,13 @@
                 document.getElementById('update-time').innerText = "Sync Error!";
             }
         }
-                function updateValuesOnly(coins) {
+
+        function updateValuesOnly(coins) {
             coins.forEach(coin => {
                 let rsiElement = document.getElementById(`rsi-${coin.symbol}`);
                 let changeElement = document.getElementById(`change-${coin.symbol}`);
                 
                 if (rsiElement && changeElement) {
-                    // Yahan toFixed(2) kar diya gaya hai
                     rsiElement.innerText = `RSI: ${coin.rsi.toFixed(2)}`;
                     
                     let changeClass = coin.change >= 0 ? 'change-up' : 'change-down';
@@ -394,14 +378,13 @@
         }
 
         function renderDashboard(coins) {
-            let ict = [], golden = [], v1 = [], neutral = [], bullish = [], oversold = [];
+            let ict = [], golden = [], v1 = [], bullish = [], oversold = [];
 
             coins.forEach(coin => {
                 let rsi = coin.rsi;
                 if (coin.isICT) ict.push(coin);
                 else if (coin.isGolden) golden.push(coin);
                 else if (rsi >= 50 && rsi <= 60) v1.push(coin);
-                else if (rsi >= 42 && rsi < 50) neutral.push(coin);
                 else if (rsi >= 30 && rsi < 42) bullish.push(coin);
                 else if (rsi >= 10 && rsi < 30) oversold.push(coin);
             });
@@ -409,7 +392,6 @@
             ict.sort((a, b) => b.rsi - a.rsi);
             golden.sort((a, b) => b.rsi - a.rsi);
             v1.sort((a, b) => b.rsi - a.rsi);
-            neutral.sort((a, b) => b.rsi - a.rsi);
             bullish.sort((a, b) => b.rsi - a.rsi);
             oversold.sort((a, b) => b.rsi - a.rsi);
 
@@ -423,7 +405,6 @@
                         <a href="https://www.tradingview.com/chart/?symbol=BINANCE:${coin.symbol}" target="_blank" class="coin-card ${cardClass}">
                             <span class="coin-name">${coin.name}</span>
                             <div class="coin-data">
-                                <!-- Yahan bhi toFixed(2) kar diya gaya hai -->
                                 <span class="coin-rsi" id="rsi-${coin.symbol}">RSI: ${coin.rsi.toFixed(2)}</span>
                                 <span class="coin-change ${changeClass}" id="change-${coin.symbol}">${changeIcon} ${changeText}</span>
                             </div>
@@ -442,9 +423,6 @@
 
             document.getElementById('grid-v1').innerHTML = generateHTML(v1, 'card-v1');
             document.getElementById('count-v1').innerText = `${v1.length} coins`;
-
-            document.getElementById('grid-neutral').innerHTML = generateHTML(neutral, 'card-neutral');
-            document.getElementById('count-neutral').innerText = `${neutral.length} coins`;
 
             document.getElementById('grid-bullish').innerHTML = generateHTML(bullish, 'card-bullish');
             document.getElementById('count-bullish').innerText = `${bullish.length} coins`;
