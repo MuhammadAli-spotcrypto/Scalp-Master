@@ -28,6 +28,7 @@
         .category-title h2 { font-size: 16px; letter-spacing: 0.3px; }
         .coin-count { font-size: 12px; color: #848e9c; background: #1e2329; padding: 4px 8px; border-radius: 12px; }
 
+        #cat-golden-ict .category-header { border-left-color: #f59e0b; }
         #cat-ict .category-header { border-left-color: #8b5cf6; }
         #cat-golden .category-header { border-left-color: #fcd535; }
         #cat-v1 .category-header { border-left-color: #0ecb81; }
@@ -45,6 +46,11 @@
         
         .change-up { color: #0ecb81; }
         .change-down { color: #f6465d; }
+
+        /* Golden ICT Card Style */
+        .card-golden-ict { background: linear-gradient(145deg, #451a03, #290f02); border-color: #78350f; color: #fbbf24; }
+        .card-golden-ict:hover { border-color: #f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2); transform: translateY(-2px); }
+        .card-golden-ict .coin-name { color: #fde68a; }
 
         .card-ict { background: linear-gradient(145deg, #2e1065, #170b3b); border-color: #5b21b6; color: #c4b5fd; }
         .card-ict:hover { border-color: #8b5cf6; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2); transform: translateY(-2px); }
@@ -91,10 +97,21 @@
 
     <div id="dashboard" style="display: none;">
         
+        <!-- NEW GOLDEN ICT SECTION -->
+        <div class="category" id="cat-golden-ict" style="display: none;">
+            <div class="category-header">
+                <div class="category-title">
+                    <h2>👑 Golden ICT (Setup Ready + Pumping Green)</h2>
+                </div>
+                <span class="coin-count" id="count-golden-ict">0 coins</span>
+            </div>
+            <div class="grid" id="grid-golden-ict"></div>
+        </div>
+
         <div class="category" id="cat-ict" style="display: none;">
             <div class="category-header">
                 <div class="category-title">
-                    <h2>🔮 ICT Based (Double 1% Liq Sweep + RSI 30-42)</h2>
+                    <h2>🔮 ICT Based (Double 1% Wave + RSI 29-42)</h2>
                 </div>
                 <span class="coin-count" id="count-ict">0 coins</span>
             </div>
@@ -114,7 +131,7 @@
         <div class="category" id="cat-v1">
             <div class="category-header">
                 <div class="category-title">
-                    <h2>⚡ V1 Method (RSI 50-60)</h2>
+                    <h2>⚡ V1 Method (RSI 50-60 + 30m Momentum)</h2>
                 </div>
                 <span class="coin-count" id="count-v1">0 coins</span>
             </div>
@@ -169,47 +186,64 @@
         function calculateSMA(closes, period = 20) {
             if (closes.length < period) return 0;
             let sum = 0;
-            for (let i = closes.length - period; i < closes.length; i++) {
-                sum += closes[i];
-            }
+            for (let i = closes.length - period; i < closes.length; i++) sum += closes[i];
             return sum / period;
         }
 
-        function checkICTSetup(klines) {
-            if (klines.length < 10) return false;
+        // NEW 1% WICK-TO-WICK ICT LOGIC
+        function getICTDetails(klines) {
+            if (klines.length < 10) return { isICT: false, isGoldenICT: false };
             let i = klines.length - 1;
 
             const isGreen = (index) => parseFloat(klines[index][4]) >= parseFloat(klines[index][1]);
             const getHigh = (index) => parseFloat(klines[index][2]);
             const getLow = (index) => parseFloat(klines[index][3]);
 
-            if (isGreen(i)) return false; 
-            while (i >= 0 && !isGreen(i)) i--;
-            if (i < 0) return false;
+            let currentCandleGreen = isGreen(i);
 
-            let g1High = getHigh(i), g1Low = getLow(i), g1Count = 0;
-            while (i >= 0 && isGreen(i)) {
-                if (getHigh(i) > g1High) g1High = getHigh(i);
-                if (getLow(i) < g1Low) g1Low = getLow(i);
-                g1Count++; i--;
+            // Agar live candle Green hai, to us se picchli candle lazmi Red honi chahiye (tabhi wo ICT ka part hai)
+            if (currentCandleGreen && isGreen(i - 1)) {
+                return { isICT: false, isGoldenICT: false };
             }
-            if (g1Count === 0 || i < 0) return false;
-            if ((((g1High - g1Low) / g1Low) * 100) < 1.0) return false; 
 
-            let rCount = 0;
-            while (i >= 0 && !isGreen(i)) { rCount++; i--; }
-            if (rCount === 0 || i < 0) return false;
+            i--; // Pichli candle par ja kar pattern start karein
 
-            let g2High = getHigh(i), g2Low = getLow(i), g2Count = 0;
-            while (i >= 0 && isGreen(i)) {
-                if (getHigh(i) > g2High) g2High = getHigh(i);
-                if (getLow(i) < g2Low) g2Low = getLow(i);
-                g2Count++; i--;
+            // 1. Skip Recent Red Pullback
+            let redPullbackCount = 0;
+            while (i >= 0 && !isGreen(i)) {
+                redPullbackCount++; i--;
             }
-            if (g2Count === 0) return false;
-            if ((((g2High - g2Low) / g2Low) * 100) < 1.0) return false; 
+            if (i < 0) return { isICT: false, isGoldenICT: false };
 
-            return true;
+            // 2. Wave 1 (Green Block) -> Min 1% Length
+            let w1High = getHigh(i), w1Low = getLow(i);
+            while (i >= 0 && isGreen(i)) {
+                w1High = Math.max(w1High, getHigh(i));
+                w1Low = Math.min(w1Low, getLow(i));
+                i--;
+            }
+            if (((w1High - w1Low) / w1Low) * 100 < 1.0) return { isICT: false, isGoldenICT: false };
+
+            // 3. Middle Red Gap
+            let gapCount = 0;
+            while (i >= 0 && !isGreen(i)) {
+                gapCount++; i--;
+            }
+            if (gapCount === 0 || i < 0) return { isICT: false, isGoldenICT: false };
+
+            // 4. Wave 2 (Older Green Block) -> Min 1% Length
+            let w2High = getHigh(i), w2Low = getLow(i);
+            while (i >= 0 && isGreen(i)) {
+                w2High = Math.max(w2High, getHigh(i));
+                w2Low = Math.min(w2Low, getLow(i));
+                i--;
+            }
+            if (((w2High - w2Low) / w2Low) * 100 < 1.0) return { isICT: false, isGoldenICT: false };
+
+            return {
+                isICT: !currentCandleGreen, // Agar current RED hai to normal ICT
+                isGoldenICT: currentCandleGreen // Agar GREEN ban gayi to VIP Golden ICT
+            };
         }
 
         const delay = ms => new Promise(res => setTimeout(res, ms));
@@ -219,7 +253,7 @@
                 document.getElementById('loading').style.display = 'block';
                 document.getElementById('dashboard').style.display = 'none';
                 document.getElementById('update-time').innerText = "Scanning All Markets...";
-                document.getElementById('loading-subtext').innerText = "Filtering active spot pairs...";
+                document.getElementById('loading-subtext').innerText = "Fetching ALL USDT spot pairs...";
                 
                 const infoRes = await fetch('https://api.binance.com/api/v3/exchangeInfo');
                 const info = await infoRes.json();
@@ -253,8 +287,7 @@
                 document.getElementById('loading-subtext').innerText = "Network Error. Please try again.";
             }
         }
-
-        async function checkDailyTrend(symbol) {
+                async function checkDailyTrend(symbol) {
             try {
                 const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1d&limit=21`);
                 const klines = await res.json();
@@ -273,7 +306,8 @@
                 return calculateWildersRSI(closes);
             } catch (e) { return 0; }
         }
-                async function refreshRSIValues(forceFullRefresh = false) {
+
+        async function refreshRSIValues(forceFullRefresh = false) {
             if (forceFullRefresh) {
                 refreshCounter = 5; 
             }
@@ -305,20 +339,41 @@
                             const lastClose = closes[closes.length - 1];
                             const sma20_1H = calculateSMA(closes, 20);
                             
-                            let is1HTrendUp = lastClose > sma20_1H;
-                            let isGolden = false;
-                            
+                            let isGoldenICT = false;
                             let isICT = false;
-                            if (rsi1H >= 30 && rsi1H <= 42) {
-                                isICT = checkICTSetup(klines);
+                            let isHiddenBullish = false;
+                            let isOversold = false;
+                            let isGolden = false;
+                            let isV1 = false;
+
+                            // 1. ICT & Golden ICT Check (RSI 29 - 42)
+                            if (rsi1H >= 29 && rsi1H <= 42) {
+                                let ictStatus = getICTDetails(klines);
+                                if (ictStatus.isGoldenICT) isGoldenICT = true;
+                                else if (ictStatus.isICT) isICT = true;
                             }
 
-                            if (rsi1H >= 50 && rsi1H <= 60 && is1HTrendUp) {
-                                let is1DTrendUp = await checkDailyTrend(symbol);
-                                if(is1DTrendUp) {
-                                    let rsi30m = await get30mRSI(symbol);
-                                    if (rsi30m > rsi1H) {
-                                        isGolden = true;
+                            // 2. Hidden Bullish & Oversold (Agar ICT mein fail ho gaya)
+                            if (!isGoldenICT && !isICT) {
+                                if (rsi1H >= 30 && rsi1H <= 42) {
+                                    isHiddenBullish = true;
+                                } else if (rsi1H >= 10 && rsi1H < 30) {
+                                    isOversold = true;
+                                }
+                            }
+
+                            // 3. V1 & Golden Check (RSI 50 - 60)
+                            if (rsi1H >= 50 && rsi1H <= 60) {
+                                let rsi30m = await get30mRSI(symbol);
+                                if (rsi30m > rsi1H) { // V1 needs momentum too now
+                                    isV1 = true;
+                                    let is1HTrendUp = lastClose > sma20_1H;
+                                    if (is1HTrendUp) {
+                                        let is1DTrendUp = await checkDailyTrend(symbol);
+                                        if (is1DTrendUp) {
+                                            isGolden = true; // Upgrade to Golden
+                                            isV1 = false; // Mutually exclusive
+                                        }
                                     }
                                 }
                             }
@@ -328,8 +383,12 @@
                                 symbol: symbol,
                                 rsi: rsi1H, 
                                 change: changePercent,
+                                isGoldenICT: isGoldenICT,
+                                isICT: isICT,
+                                isHiddenBullish: isHiddenBullish,
+                                isOversold: isOversold,
                                 isGolden: isGolden,
-                                isICT: isICT
+                                isV1: isV1
                             };
                         } catch (e) { return null; }
                     });
@@ -378,17 +437,18 @@
         }
 
         function renderDashboard(coins) {
-            let ict = [], golden = [], v1 = [], bullish = [], oversold = [];
+            let goldenICT = [], ict = [], golden = [], v1 = [], bullish = [], oversold = [];
 
             coins.forEach(coin => {
-                let rsi = coin.rsi;
-                if (coin.isICT) ict.push(coin);
+                if (coin.isGoldenICT) goldenICT.push(coin);
+                else if (coin.isICT) ict.push(coin);
                 else if (coin.isGolden) golden.push(coin);
-                else if (rsi >= 50 && rsi <= 60) v1.push(coin);
-                else if (rsi >= 30 && rsi < 42) bullish.push(coin);
-                else if (rsi >= 10 && rsi < 30) oversold.push(coin);
+                else if (coin.isV1) v1.push(coin);
+                else if (coin.isHiddenBullish) bullish.push(coin);
+                else if (coin.isOversold) oversold.push(coin);
             });
 
+            goldenICT.sort((a, b) => b.rsi - a.rsi);
             ict.sort((a, b) => b.rsi - a.rsi);
             golden.sort((a, b) => b.rsi - a.rsi);
             v1.sort((a, b) => b.rsi - a.rsi);
@@ -413,9 +473,12 @@
                 }).join('');
             };
 
+            document.getElementById('grid-golden-ict').innerHTML = generateHTML(goldenICT, 'card-golden-ict');
+            document.getElementById('count-golden-ict').innerText = `${goldenICT.length} coins`;
+            document.getElementById('cat-golden-ict').style.display = goldenICT.length > 0 ? 'block' : 'none';
+
             document.getElementById('grid-ict').innerHTML = generateHTML(ict, 'card-ict');
             document.getElementById('count-ict').innerText = `${ict.length} coins`;
-            
             document.getElementById('cat-ict').style.display = ict.length > 0 ? 'block' : 'none';
 
             document.getElementById('grid-golden').innerHTML = generateHTML(golden, 'card-golden');
