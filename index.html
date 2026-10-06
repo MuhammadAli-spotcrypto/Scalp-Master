@@ -1,84 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scalp Master - Algo Premium V2</title>
-    <!-- CSS File Link -->
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scalp Master - Algo Premium V3</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <div class="header">
-        <h1>Scalp <span>Premium Algo V2</span></h1>
-        <div class="controls">
-            <div class="status" id="status-indicator">
-                <div class="status-dot"></div>
-                <span id="update-time">System Ready</span>
-            </div>
-            <button class="btn" onclick="initDashboard()">🔄 Rescan</button>
-            <button class="btn btn-primary" onclick="requestNotificationPermission()">🔔 Enable Alerts</button>
-        </div>
-    </div>
-
-    <div id="loading">
-        Connecting Algo Engine...
-        <span class="spinner-text" id="loading-subtext">Fetching 1000+ USDT pairs & analyzing trendlines...</span>
-    </div>
-
-    <div id="dashboard" style="display: none;">
-        <div class="category" id="cat-premium" style="display: none;">
-            <div class="category-header">
-                <div class="category-title">
-                    <h2>💎 PREMIUM ZONE (Confirmed Setups & Tracker)</h2>
-                </div>
-                <span class="coin-count" id="count-premium">0 coins</span>
-            </div>
-            <div class="grid" id="grid-premium"></div>
-        </div>
-
-        <div class="category" id="cat-ict" style="display: none;">
-            <div class="category-header">
-                <div class="category-title"><h2>🔮 ICT Pending (Trendline Checked, Waiting for Green)</h2></div>
-                <span class="coin-count" id="count-ict">0 coins</span>
-            </div>
-            <div class="grid" id="grid-ict"></div>
-        </div>
-
-        <div class="category" id="cat-golden">
-            <div class="category-header">
-                <div class="category-title"><h2>🌟 Golden Setup</h2></div>
-                <span class="coin-count" id="count-golden">0 coins</span>
-            </div>
-            <div class="grid" id="grid-golden"></div>
-        </div>
-
-        <div class="category" id="cat-v1">
-            <div class="category-header">
-                <div class="category-title"><h2>⚡ V1 Method</h2></div>
-                <span class="coin-count" id="count-v1">0 coins</span>
-            </div>
-            <div class="grid" id="grid-v1"></div>
-        </div>
-
-        <div class="category" id="cat-bullish">
-            <div class="category-header">
-                <div class="category-title"><h2>🔍 RSI Divergence (Price Down, RSI Up)</h2></div>
-                <span class="coin-count" id="count-bullish">0 coins</span>
-            </div>
-            <div class="grid" id="grid-bullish"></div>
-        </div>
-
-        <div class="category" id="cat-oversold">
-            <div class="category-header">
-                <div class="category-title"><h2>📉 Oversold (RSI 10-29.99)</h2></div>
-                <span class="coin-count" id="count-oversold">0 coins</span>
-            </div>
-            <div class="grid" id="grid-oversold"></div>
-        </div>
-    </div>
-
-    <!-- JavaScript File Link -->
-    <script src="app.js"></script>
+<div class="header">
+<h1>Scalp <span>Premium Algo V3</span></h1>
+<div class="controls">
+<div class="status" id="status-indicator"><div class="status-dot"></div><span id="update-time">System Ready</span></div>
+<button class="btn" onclick="initDashboard()">🔄 Rescan</button>
+<button class="btn btn-primary" onclick="requestNotificationPermission()">🔔 Enable Alerts</button>
+</div>
+</div>
+<div id="loading">Connecting Algo Engine...<span class="spinner-text" id="loading-subtext">Fetching 1000+ USDT pairs & checking setups...</span></div>
+<div id="dashboard" style="display: none;">
+<div class="category" id="cat-premium" style="display: none;"><div class="category-header"><div class="category-title"><h2>💎 PREMIUM ZONE (High Accuracy Setups)</h2></div><span class="coin-count" id="count-premium">0 coins</span></div><div class="grid" id="grid-premium"></div></div>
+<div class="category" id="cat-ict" style="display: none;"><div class="category-header"><div class="category-title"><h2>🔮 Standard ICT & Golden ICT</h2></div><span class="coin-count" id="count-ict">0 coins</span></div><div class="grid" id="grid-ict"></div></div>
+<div class="category" id="cat-golden"><div class="category-header"><div class="category-title"><h2>🌟 Golden Setup (1H/1D Up + Mom)</h2></div><span class="coin-count" id="count-golden">0 coins</span></div><div class="grid" id="grid-golden"></div></div>
+<div class="category" id="cat-v1"><div class="category-header"><div class="category-title"><h2>⚡ Standard V1 Method (RSI 50-60 + Green HA)</h2></div><span class="coin-count" id="count-v1">0 coins</span></div><div class="grid" id="grid-v1"></div></div>
+<div class="category" id="cat-bullish"><div class="category-header"><div class="category-title"><h2>🔍 Hidden Bullish & Divergence (RSI 30-41.99)</h2></div><span class="coin-count" id="count-bullish">0 coins</span></div><div class="grid" id="grid-bullish"></div></div>
+<div class="category" id="cat-oversold"><div class="category-header"><div class="category-title"><h2>📉 Oversold (RSI 10-29.99)</h2></div><span class="coin-count" id="count-oversold">0 coins</span></div><div class="grid" id="grid-oversold"></div></div>
+<div class="orders-section" id="orders-section" style="display: none;"><h2 class="orders-header">📱 Active Orders (V1 Auto-Tracker)</h2><div class="orders-list" id="orders-list"></div></div>
+</div>
+<script src="app.js"></script>
 </body>
 </html>
