@@ -206,4 +206,3 @@ ordersList.innerHTML=ordersHTML;
 document.getElementById('loading').style.display='none';document.getElementById('dashboard').style.display='block';
 }
 initDashboard();setInterval(()=>{refreshRSIValues(false);},60000);
-  
