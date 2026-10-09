@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scalp Master - Premium </title>
+<title>Scalp Master</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
 body{background-color:#0b0e11;color:#eaecef;padding:20px;padding-bottom:50px;}
@@ -51,22 +51,6 @@ body{background-color:#0b0e11;color:#eaecef;padding:20px;padding-bottom:50px;}
 .card-oversold{background:linear-gradient(145deg,#2e1519,#1f0e11);border-color:#4a1c22;color:#f6465d;}
 #loading{text-align:center;color:#848e9c;padding:60px;font-size:16px;letter-spacing:0.5px;}
 .spinner-text{display:block;margin-top:10px;color:#00e5ff;font-weight:500;}
-.orders-section{margin-top:40px;border-top:2px solid #2b3139;padding-top:25px;}
-.orders-header{font-size:18px;color:#0ecb81;margin-bottom:15px;letter-spacing:0.5px;}
-.orders-list{display:flex;flex-direction:column;gap:12px;}
-.order-item{background:#12161b;border-left:4px solid #0ecb81;padding:15px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 4px 12px rgba(0,0,0,0.2);text-decoration:none;border:1px solid #1e2329;transition:0.2s;}
-.order-item:hover{background:#181c22;transform:translateX(3px);}
-.order-left{display:flex;flex-direction:column;gap:5px;}
-.order-title{font-size:15px;font-weight:700;color:#e0f9ec;}
-.order-title span{color:#0ecb81;font-weight:900;margin-right:5px;}
-.order-subtitle{font-size:12px;color:#848e9c;}
-.order-right{text-align:right;}
-.order-pnl{font-size:16px;font-weight:bold;}
-.order-status{font-size:12px;margin-top:4px;color:#fcd535;}
-.pnl-up{color:#0ecb81;}
-.pnl-down{color:#f6465d;}
-.order-hit{border-left-color:#fcd535;}
-.order-hit .order-status{color:#0ecb81;font-weight:bold;}
 </style>
 </head>
 <body>
@@ -78,42 +62,21 @@ body{background-color:#0b0e11;color:#eaecef;padding:20px;padding-bottom:50px;}
 <button class="btn btn-primary" onclick="requestNotificationPermission()">🔔 Enable Alerts</button>
 </div>
 </div>
-<div id="loading">Connecting Algo Engine...<span class="spinner-text" id="loading-subtext">Fetching 1000+ USDT pairs & checking setups...</span></div>
+<div id="loading">Connecting Algo Engine...<span class="spinner-text" id="loading-subtext">Fetching USDT pairs & checking setups...</span></div>
 <div id="dashboard" style="display: none;">
-<div class="category" id="cat-premium" style="display: none;"><div class="category-header"><div class="category-title"><h2>💎 PREMIUM ZONE (High Accuracy Setups)</h2></div><span class="coin-count" id="count-premium">0 coins</span></div><div class="grid" id="grid-premium"></div></div>
-
-<!-- YAHAN GHALTI THI JO THEEK KAR DI GAYI HAI -->
+<div class="category" id="cat-premium" style="display: none;"><div class="category-header"><div class="category-title"><h2>💎 PREMIUM ZONE (High Accuracy)</h2></div><span class="coin-count" id="count-premium">0 coins</span></div><div class="grid" id="grid-premium"></div></div>
 <div class="category" id="cat-ict"><div class="category-header"><div class="category-title"><h2>🔮 Standard ICT & Golden ICT</h2></div><span class="coin-count" id="count-ict">0 coins</span></div><div class="grid" id="grid-ict"></div></div>
-
 <div class="category" id="cat-golden"><div class="category-header"><div class="category-title"><h2>🌟 Golden Setup (1H/1D Up + Mom)</h2></div><span class="coin-count" id="count-golden">0 coins</span></div><div class="grid" id="grid-golden"></div></div>
 <div class="category" id="cat-v1"><div class="category-header"><div class="category-title"><h2>⚡ Standard V1 Method (RSI 50-60 + Green HA)</h2></div><span class="coin-count" id="count-v1">0 coins</span></div><div class="grid" id="grid-v1"></div></div>
 <div class="category" id="cat-bullish"><div class="category-header"><div class="category-title"><h2>🔍 Hidden Bullish & Divergence (RSI 30-41.99)</h2></div><span class="coin-count" id="count-bullish">0 coins</span></div><div class="grid" id="grid-bullish"></div></div>
 <div class="category" id="cat-oversold"><div class="category-header"><div class="category-title"><h2>📉 Oversold (RSI 10-29.99)</h2></div><span class="coin-count" id="count-oversold">0 coins</span></div><div class="grid" id="grid-oversold"></div></div>
-<div class="orders-section" id="orders-section" style="display: none;"><h2 class="orders-header">📱 Active Orders (V1 Auto-Tracker)</h2><div class="orders-list" id="orders-list"></div></div>
 </div>
+
 <script>
 let trackedSymbols=[];
 let refreshCounter=5;
-let activeTrades=JSON.parse(localStorage.getItem('scalpTradesV3'))||{};
-let premiumIctNotified=JSON.parse(localStorage.getItem('premiumIctNotified'))||{};
 function requestNotificationPermission(){if("Notification" in window){Notification.requestPermission().then(permission=>{if(permission==="granted")alert("Notifications Enabled!");});}}
-function playAlertSound(){
-let context=new(window.AudioContext||window.webkitAudioContext)();
-let osc1=context.createOscillator();let gain1=context.createGain();
-osc1.type='sine';osc1.connect(gain1);gain1.connect(context.destination);
-osc1.frequency.setValueAtTime(523.25,context.currentTime);
-gain1.gain.setValueAtTime(0,context.currentTime);gain1.gain.linearRampToValueAtTime(0.3,context.currentTime+0.02);gain1.gain.exponentialRampToValueAtTime(0.001,context.currentTime+1);
-osc1.start(context.currentTime);osc1.stop(context.currentTime+1);
-setTimeout(()=>{
-let osc2=context.createOscillator();let gain2=context.createGain();
-osc2.type='sine';osc2.connect(gain2);gain2.connect(context.destination);
-osc2.frequency.setValueAtTime(659.25,context.currentTime);
-gain2.gain.setValueAtTime(0,context.currentTime);gain2.gain.linearRampToValueAtTime(0.3,context.currentTime+0.02);gain2.gain.exponentialRampToValueAtTime(0.001,context.currentTime+1.5);
-osc2.start(context.currentTime);osc2.stop(context.currentTime+1.5);
-},150);
-}
-function notifyUser(title,body,playSound=true){
-if(playSound)playAlertSound();
+function notifyUser(title,body){
 if(Notification.permission==="granted"){new Notification(title,{body:body,icon:"https://cryptologos.cc/logos/tether-usdt-logo.png"});}
 }
 function calculateWildersRSIArray(closes){
@@ -156,7 +119,6 @@ let i=klines.length-1;
 const isGreen=(idx)=>parseFloat(klines[idx][4])>=parseFloat(klines[idx][1]);
 const getHigh=(idx)=>parseFloat(klines[idx][2]);
 const getLow=(idx)=>parseFloat(klines[idx][3]);
-const getBodyLow=(idx)=>Math.min(parseFloat(klines[idx][1]),parseFloat(klines[idx][4]));
 let currentCandleGreen=isGreen(i);let elapsedMins=(Date.now()-klines[i][0])/60000;
 if(currentCandleGreen&&isGreen(i-1))return{isICT:false,isGoldenICT:false};
 let startIdx=currentCandleGreen?i-1:i;
@@ -169,11 +131,6 @@ if(k<0||((w2High-w2Low)/w2Low)*100<1.0)return{isICT:false,isGoldenICT:false};
 let gap1MinLow=Infinity,gap1MinIdx=-1;
 while(k>=0&&!isGreen(k)){if(getLow(k)<gap1MinLow){gap1MinLow=getLow(k);gap1MinIdx=k;}k--;}
 if(gap1MinIdx===-1)return{isICT:false,isGoldenICT:false};
-let w1High=getHigh(k),w1Low=getLow(k);
-while(k>=0&&isGreen(k)){w1High=Math.max(w1High,getHigh(k));w1Low=Math.min(w1Low,getLow(k));k--;}
-if(((w1High-w1Low)/w1Low)*100<1.0)return{isICT:false,isGoldenICT:false};
-let slope=(gap2MinLow-gap1MinLow)/(gap2MinIdx-gap1MinIdx);
-for(let j=gap1MinIdx+1;j<=gap2MinIdx;j++){let trendlineY=gap1MinLow+slope*(j-gap1MinIdx);if(getBodyLow(j)<trendlineY)return{isICT:false,isGoldenICT:false};}
 let isGoldenICT=currentCandleGreen&&elapsedMins>=10;
 return{isICT:!currentCandleGreen,isGoldenICT:isGoldenICT};
 }
@@ -190,8 +147,11 @@ let isGreen=parseFloat(klines[currIdx][4])>=parseFloat(klines[currIdx][1]);let e
 let prevLow=Infinity,prevIdx=-1;
 for(let i=currIdx-20;i<=currIdx-5;i++){if(i<0)continue;let l=parseFloat(klines[i][3]);if(l<prevLow){prevLow=l;prevIdx=i;}}
 if(prevIdx!==-1){
-let rsiOffset=rsiArr.length-klines.length;let prevRsi=rsiArr[prevIdx+rsiOffset];
-if(currentLow<prevLow&&currentRsi>prevRsi)return{isDiv:true,isConfirmed:isGreen&&elapsedMins>=5};
+let rsiIndex=prevIdx-15;
+if(rsiIndex>=0&&rsiIndex<rsiArr.length){
+let prevRsi=rsiArr[rsiIndex];
+if(currentLow<prevLow&&currentRsi>prevRsi)return{isDiv:true,isConfirmed:(isGreen&&elapsedMins>=5)};
+}
 }
 return{isDiv:false,isConfirmed:false};
 }
@@ -221,7 +181,7 @@ const closes=klines.map(k=>parseFloat(k[4]));return closes[closes.length-1]>calc
 async function refreshRSIValues(forceFullRefresh=false){
 if(forceFullRefresh)refreshCounter=5;
 try{
-let coinsData=[];const chunkSize=25;
+let coinsData=[];const chunkSize=35;
 for(let i=0;i<trackedSymbols.length;i+=chunkSize){
 const chunk=trackedSymbols.slice(i,i+chunkSize);
 const promises=chunk.map(async(symbol)=>{
@@ -244,7 +204,6 @@ if(await checkDailyTrend(symbol)){
 let m30=await get30mData(symbol);
 if(m30.shaGreen){
 isPremium=true;premiumType="V1";
-if(currentRsi<=55&&!activeTrades[symbol]){activeTrades[symbol]={price:currentClose,time:Date.now(),hit:false,rsi:currentRsi};notifyUser(`V1 Order Triggered: ${symbol}`,`RSI ${currentRsi.toFixed(2)}. Trading Started!`,true);}
 }
 }
 }
@@ -257,25 +216,21 @@ if(!isPremium&&currentRsi>=29&&currentRsi<=42){
 let ictData=getICTAdvanced(klines);
 if(ictData.isICT||ictData.isGoldenICT){
 isICT=ictData.isICT;isGoldenICT=ictData.isGoldenICT;
-if(checkPremiumICT(klines)){isPremium=true;premiumType="ICT";isICT=false;isGoldenICT=false;let lastNotified=premiumIctNotified[symbol]||0;if(Date.now()-lastNotified>3600000){notifyUser(`Premium ICT: ${symbol}`,`Support Held. Setup Detected!`,false);premiumIctNotified[symbol]=Date.now();}}
+if(checkPremiumICT(klines)){isPremium=true;premiumType="ICT";isICT=false;isGoldenICT=false;notifyUser(`Premium ICT: ${symbol}`,`Support Held. Setup Detected!`);}
 }
 }
 if(!isPremium&&!isV1&&!isGolden&&!isICT&&!isGoldenICT){
-if(currentRsi>=30&&currentRsi<=42){let divData=checkRsiDivergence(klines,rsiArr);if(divData.isConfirmed){isPremium=true;premiumType="Divergence";}else{isHiddenBullish=true;}}else if(currentRsi>=10&&currentRsi<30){isOversold=true;}
-}
-if(activeTrades[symbol]){
-let t=activeTrades[symbol];
-t.rsi=currentRsi; 
-let gain=((currentClose-t.price)/t.price)*100;
-if(gain>=1.0&&!t.hit){t.hit=true;t.hitTime=Date.now();notifyUser(`✅ Target Hit!`,`${symbol} gave 1% profit!`,true);}
-activeTrades[symbol].currentGain=gain;
+if(currentRsi>=30&&currentRsi<=42){
+let divData=checkRsiDivergence(klines,rsiArr);
+if(divData.isConfirmed){isPremium=true;premiumType="Divergence";}
+else if(divData.isDiv){isHiddenBullish=true;}
+}else if(currentRsi>=10&&currentRsi<30){isOversold=true;}
 }
 return{name:symbol.replace('USDT',''),symbol:symbol,rsi:currentRsi,change:changePercent,isPremium:isPremium,premiumType:premiumType,isICT:isICT,isGoldenICT:isGoldenICT,isV1:isV1,isGolden:isGolden,isHiddenBullish:isHiddenBullish,isOversold:isOversold};
 }catch(e){return null;}
 });
-const results=await Promise.all(promises);coinsData.push(...results.filter(r=>r!==null));await delay(200);
+const results=await Promise.all(promises);coinsData.push(...results.filter(r=>r!==null));await delay(100);
 }
-localStorage.setItem('scalpTradesV3',JSON.stringify(activeTrades));localStorage.setItem('premiumIctNotified',JSON.stringify(premiumIctNotified));
 refreshCounter++;if(refreshCounter>=5){renderDashboard(coinsData);refreshCounter=0;document.getElementById('update-time').innerText=`Live - Sorted at ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;}else{renderDashboard(coinsData);}
 }catch(error){console.error(error);}
 }
@@ -296,21 +251,6 @@ document.getElementById('grid-golden').innerHTML=generateHTML(golden,'card-golde
 document.getElementById('grid-v1').innerHTML=generateHTML(v1,'card-v1');document.getElementById('count-v1').innerText=`${v1.length} coins`;
 document.getElementById('grid-bullish').innerHTML=generateHTML(bullish,'card-bullish');document.getElementById('count-bullish').innerText=`${bullish.length} coins`;
 document.getElementById('grid-oversold').innerHTML=generateHTML(oversold,'card-oversold');document.getElementById('count-oversold').innerText=`${oversold.length} coins`;
-let ordersList=document.getElementById('orders-list');let ordersHTML="";let tradeKeys=Object.keys(activeTrades);
-if(tradeKeys.length>0){
-document.getElementById('orders-section').style.display='block';
-tradeKeys.forEach(sym=>{
-let t=activeTrades[sym];let mins=Math.round((Date.now()-t.time)/60000);let rsiDisplay=t.rsi?t.rsi.toFixed(2):'--';
-if(t.hit){
-let hitMins=Math.round((t.hitTime-t.time)/60000);
-ordersHTML+=`<a href="https://www.tradingview.com/chart/?symbol=BINANCE:${sym}" target="_blank" class="order-item order-hit"><div class="order-left"><div class="order-title"><span>V1</span> ${sym} | RSI: ${rsiDisplay}</div><div class="order-subtitle">1% in ${hitMins} mins</div></div><div class="order-right"><div class="order-pnl pnl-up">+1.00%</div><div class="order-status">Target Hit ✅</div></div></a>`;
-}else{
-let pnlClass=t.currentGain>=0?'pnl-up':'pnl-down';
-ordersHTML+=`<a href="https://www.tradingview.com/chart/?symbol=BINANCE:${sym}" target="_blank" class="order-item"><div class="order-left"><div class="order-title"><span>V1</span> ${sym} | RSI: ${rsiDisplay}</div><div class="order-subtitle">Active since ${mins} mins</div></div><div class="order-right"><div class="order-pnl ${pnlClass}">${t.currentGain>0?'+':''}${t.currentGain.toFixed(2)}%</div><div class="order-status">In Progress ⏳</div></div></a>`;
-}
-});
-ordersList.innerHTML=ordersHTML;
-}else{document.getElementById('orders-section').style.display='none';}
 document.getElementById('loading').style.display='none';document.getElementById('dashboard').style.display='block';
 }
 initDashboard();setInterval(()=>{refreshRSIValues(false);},60000);
