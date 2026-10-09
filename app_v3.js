@@ -85,11 +85,10 @@ return{isICT:!currentCandleGreen,isGoldenICT:isGoldenICT};
 }
 function checkPremiumICT(klines){
 if(klines.length<30)return false;
-let i=klines.length-1;let currentLow=parseFloat(klines[i][3]);
-let min25=Infinity,max25=0;
-for(let j=i-25;j<i;j++){let h=parseFloat(klines[j][2]);let l=parseFloat(klines[j][3]);if(h>max25)max25=h;if(l<min25)min25=l;}
-let rangePercent=((max25-min25)/min25)*100;
-return(rangePercent<=8.5)&&(currentLow>=min25);
+let i=klines.length-1;let currentClose=parseFloat(klines[i][4]);
+let min25=Infinity;
+for(let j=i-25;j<i;j++){let l=parseFloat(klines[j][3]);if(l<min25)min25=l;}
+return currentClose>=min25;
 }
 function checkRsiDivergence(klines,rsiArr){
 let currIdx=klines.length-1;let currentLow=parseFloat(klines[currIdx][3]);let currentRsi=rsiArr[rsiArr.length-1];
@@ -114,7 +113,7 @@ await refreshRSIValues(true);
 }
 async function get30mData(symbol){
 try{
-const res=await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=30m&limit=250`);const klines=await res.json();
+const res=await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=30m&limit=150`);const klines=await res.json();
 const rsiArr=calculateWildersRSIArray(klines.map(k=>parseFloat(k[4])));const shaGreen=getSmoothedHACurrentState(klines);
 return{rsi:rsiArr[rsiArr.length-1],shaGreen:shaGreen};
 }catch(e){return{rsi:0,shaGreen:false};}
@@ -128,44 +127,59 @@ const closes=klines.map(k=>parseFloat(k[4]));return closes[closes.length-1]>calc
 async function refreshRSIValues(forceFullRefresh=false){
 if(forceFullRefresh)refreshCounter=5;
 try{
-let coinsData=[];const chunkSize=35;
+let coinsData=[];const chunkSize=25;
 for(let i=0;i<trackedSymbols.length;i+=chunkSize){
 const chunk=trackedSymbols.slice(i,i+chunkSize);
 const promises=chunk.map(async(symbol)=>{
 try{
-const res=await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1h&limit=250`);const klines=await res.json();
+const res=await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1h&limit=150`);const klines=await res.json();
 if(klines.length<30)return null;
 const closes=klines.map(k=>parseFloat(k[4]));const rsiArr=calculateWildersRSIArray(closes);
 let prevRsi=rsiArr[rsiArr.length-2];let currentRsi=rsiArr[rsiArr.length-1];
 let currentClose=parseFloat(klines[klines.length-1][4]);let previousClose=parseFloat(klines[klines.length-2][4]);
 let changePercent=((currentClose-previousClose)/previousClose)*100;
+let is1HTrendUp=currentClose>calculateSMA(closes,20);
 let sha1H=getSmoothedHACurrentState(klines);
 let isPremium=false,premiumType="";
 let isICT=false,isGoldenICT=false,isV1=false,isGolden=false,isHiddenBullish=false,isOversold=false;
+
 if(currentRsi>=50&&currentRsi<=60&&sha1H){
-let chancePremium=(currentRsi>=52&&currentRsi<=58.3);let chanceGolden=(currentClose>calculateSMA(closes,20));
-let m30=null;if(chancePremium||chanceGolden)m30=await get30mData(symbol);
-if(chancePremium&&m30&&m30.shaGreen){
+let chancePremiumV1=(currentRsi>=53&&currentRsi<57)&&(currentRsi>prevRsi)&&is1HTrendUp;
+if(chancePremiumV1){
+if(await checkDailyTrend(symbol)){
+let m30=await get30mData(symbol);
+if(m30.shaGreen){
 isPremium=true;premiumType="V1";
-if(prevRsi<55&&currentRsi>=55){if(!activeTrades[symbol]){activeTrades[symbol]={price:currentClose,time:Date.now(),hit:false};notifyUser(`V1 Order Triggered: ${symbol}`,`RSI Crossed 55. Trading Started!`,true);}}
+if(currentRsi<=55&&!activeTrades[symbol]){activeTrades[symbol]={price:currentClose,time:Date.now(),hit:false,rsi:currentRsi};notifyUser(`V1 Order Triggered: ${symbol}`,`RSI ${currentRsi.toFixed(2)}. Trading Started!`,true);}
 }
-if(!isPremium&&chanceGolden){if(await checkDailyTrend(symbol)){if(m30&&m30.rsi>currentRsi){isGolden=true;}}else{isV1=true;}}else if(!isPremium){isV1=true;}
+}
+}
+if(!isPremium){
+if(is1HTrendUp&&await checkDailyTrend(symbol)){let m30=await get30mData(symbol);if(m30.rsi>currentRsi){isGolden=true;}}
+else{isV1=true;}
+}
 }
 if(!isPremium&&currentRsi>=29&&currentRsi<=42){
 let ictData=getICTAdvanced(klines);
 if(ictData.isICT||ictData.isGoldenICT){
 isICT=ictData.isICT;isGoldenICT=ictData.isGoldenICT;
-if(checkPremiumICT(klines)){isPremium=true;premiumType="ICT";isICT=false;isGoldenICT=false;let lastNotified=premiumIctNotified[symbol]||0;if(Date.now()-lastNotified>3600000){notifyUser(`Premium ICT: ${symbol}`,`Support Held (Sideways). Setup Detected!`,false);premiumIctNotified[symbol]=Date.now();}}
+if(checkPremiumICT(klines)){isPremium=true;premiumType="ICT";isICT=false;isGoldenICT=false;let lastNotified=premiumIctNotified[symbol]||0;if(Date.now()-lastNotified>3600000){notifyUser(`Premium ICT: ${symbol}`,`Support Held. Setup Detected!`,false);premiumIctNotified[symbol]=Date.now();}}
 }
 }
 if(!isPremium&&!isV1&&!isGolden&&!isICT&&!isGoldenICT){
 if(currentRsi>=30&&currentRsi<=42){let divData=checkRsiDivergence(klines,rsiArr);if(divData.isConfirmed){isPremium=true;premiumType="Divergence";}else{isHiddenBullish=true;}}else if(currentRsi>=10&&currentRsi<30){isOversold=true;}
 }
-if(activeTrades[symbol]){let t=activeTrades[symbol];let gain=((currentClose-t.price)/t.price)*100;if(gain>=1.0&&!t.hit){t.hit=true;t.hitTime=Date.now();notifyUser(`✅ Target Hit!`,`${symbol} gave 1% profit!`,true);}activeTrades[symbol].currentGain=gain;}
+if(activeTrades[symbol]){
+let t=activeTrades[symbol];
+t.rsi=currentRsi; 
+let gain=((currentClose-t.price)/t.price)*100;
+if(gain>=1.0&&!t.hit){t.hit=true;t.hitTime=Date.now();notifyUser(`✅ Target Hit!`,`${symbol} gave 1% profit!`,true);}
+activeTrades[symbol].currentGain=gain;
+}
 return{name:symbol.replace('USDT',''),symbol:symbol,rsi:currentRsi,change:changePercent,isPremium:isPremium,premiumType:premiumType,isICT:isICT,isGoldenICT:isGoldenICT,isV1:isV1,isGolden:isGolden,isHiddenBullish:isHiddenBullish,isOversold:isOversold};
 }catch(e){return null;}
 });
-const results=await Promise.all(promises);coinsData.push(...results.filter(r=>r!==null));await delay(150);
+const results=await Promise.all(promises);coinsData.push(...results.filter(r=>r!==null));await delay(200);
 }
 localStorage.setItem('scalpTradesV3',JSON.stringify(activeTrades));localStorage.setItem('premiumIctNotified',JSON.stringify(premiumIctNotified));
 refreshCounter++;if(refreshCounter>=5){renderDashboard(coinsData);refreshCounter=0;document.getElementById('update-time').innerText=`Live - Sorted at ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;}else{renderDashboard(coinsData);}
@@ -192,13 +206,13 @@ let ordersList=document.getElementById('orders-list');let ordersHTML="";let trad
 if(tradeKeys.length>0){
 document.getElementById('orders-section').style.display='block';
 tradeKeys.forEach(sym=>{
-let t=activeTrades[sym];let mins=Math.round((Date.now()-t.time)/60000);
+let t=activeTrades[sym];let mins=Math.round((Date.now()-t.time)/60000);let rsiDisplay=t.rsi?t.rsi.toFixed(2):'--';
 if(t.hit){
 let hitMins=Math.round((t.hitTime-t.time)/60000);
-ordersHTML+=`<a href="https://www.tradingview.com/chart/?symbol=BINANCE:${sym}" target="_blank" class="order-item order-hit"><div class="order-left"><div class="order-title"><span>V1</span> ${sym}</div><div class="order-subtitle">1% in ${hitMins} mins</div></div><div class="order-right"><div class="order-pnl pnl-up">+1.00%</div><div class="order-status">Target Hit ✅</div></div></a>`;
+ordersHTML+=`<a href="https://www.tradingview.com/chart/?symbol=BINANCE:${sym}" target="_blank" class="order-item order-hit"><div class="order-left"><div class="order-title"><span>V1</span> ${sym} | RSI: ${rsiDisplay}</div><div class="order-subtitle">1% in ${hitMins} mins</div></div><div class="order-right"><div class="order-pnl pnl-up">+1.00%</div><div class="order-status">Target Hit ✅</div></div></a>`;
 }else{
 let pnlClass=t.currentGain>=0?'pnl-up':'pnl-down';
-ordersHTML+=`<a href="https://www.tradingview.com/chart/?symbol=BINANCE:${sym}" target="_blank" class="order-item"><div class="order-left"><div class="order-title"><span>V1</span> ${sym}</div><div class="order-subtitle">Active since ${mins} mins</div></div><div class="order-right"><div class="order-pnl ${pnlClass}">${t.currentGain>0?'+':''}${t.currentGain.toFixed(2)}%</div><div class="order-status">In Progress ⏳</div></div></a>`;
+ordersHTML+=`<a href="https://www.tradingview.com/chart/?symbol=BINANCE:${sym}" target="_blank" class="order-item"><div class="order-left"><div class="order-title"><span>V1</span> ${sym} | RSI: ${rsiDisplay}</div><div class="order-subtitle">Active since ${mins} mins</div></div><div class="order-right"><div class="order-pnl ${pnlClass}">${t.currentGain>0?'+':''}${t.currentGain.toFixed(2)}%</div><div class="order-status">In Progress ⏳</div></div></a>`;
 }
 });
 ordersList.innerHTML=ordersHTML;
