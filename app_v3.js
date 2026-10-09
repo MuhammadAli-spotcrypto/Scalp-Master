@@ -85,10 +85,11 @@ return{isICT:!currentCandleGreen,isGoldenICT:isGoldenICT};
 }
 function checkPremiumICT(klines){
 if(klines.length<30)return false;
-let i=klines.length-1;let currentClose=parseFloat(klines[i][4]);
-let min25=Infinity;
-for(let j=i-25;j<i;j++){let l=parseFloat(klines[j][3]);if(l<min25)min25=l;}
-return currentClose>=min25;
+let i=klines.length-1;let currentLow=parseFloat(klines[i][3]);
+let min25=Infinity,max25=0;
+for(let j=i-25;j<i;j++){let h=parseFloat(klines[j][2]);let l=parseFloat(klines[j][3]);if(h>max25)max25=h;if(l<min25)min25=l;}
+let rangePercent=((max25-min25)/min25)*100;
+return(rangePercent<=8.5)&&(currentLow>=min25);
 }
 function checkRsiDivergence(klines,rsiArr){
 let currIdx=klines.length-1;let currentLow=parseFloat(klines[currIdx][3]);let currentRsi=rsiArr[rsiArr.length-1];
@@ -127,7 +128,7 @@ const closes=klines.map(k=>parseFloat(k[4]));return closes[closes.length-1]>calc
 async function refreshRSIValues(forceFullRefresh=false){
 if(forceFullRefresh)refreshCounter=5;
 try{
-let coinsData=[];const chunkSize=20;
+let coinsData=[];const chunkSize=35;
 for(let i=0;i<trackedSymbols.length;i+=chunkSize){
 const chunk=trackedSymbols.slice(i,i+chunkSize);
 const promises=chunk.map(async(symbol)=>{
@@ -142,21 +143,19 @@ let sha1H=getSmoothedHACurrentState(klines);
 let isPremium=false,premiumType="";
 let isICT=false,isGoldenICT=false,isV1=false,isGolden=false,isHiddenBullish=false,isOversold=false;
 if(currentRsi>=50&&currentRsi<=60&&sha1H){
-isV1=true;
-if(currentRsi>=52&&currentRsi<=58.3){
-let m30=await get30mData(symbol);
-if(m30.shaGreen){
-isPremium=true;premiumType="V1";isV1=false;
+let chancePremium=(currentRsi>=52&&currentRsi<=58.3);let chanceGolden=(currentClose>calculateSMA(closes,20));
+let m30=null;if(chancePremium||chanceGolden)m30=await get30mData(symbol);
+if(chancePremium&&m30&&m30.shaGreen){
+isPremium=true;premiumType="V1";
 if(prevRsi<55&&currentRsi>=55){if(!activeTrades[symbol]){activeTrades[symbol]={price:currentClose,time:Date.now(),hit:false};notifyUser(`V1 Order Triggered: ${symbol}`,`RSI Crossed 55. Trading Started!`,true);}}
 }
-}
-if(!isPremium){let is1HTrendUp=currentClose>calculateSMA(closes,20);if(is1HTrendUp&&await checkDailyTrend(symbol)){let m30=await get30mData(symbol);if(m30.rsi>currentRsi){isGolden=true;isV1=false;}}}
+if(!isPremium&&chanceGolden){if(await checkDailyTrend(symbol)){if(m30&&m30.rsi>currentRsi){isGolden=true;}}else{isV1=true;}}else if(!isPremium){isV1=true;}
 }
 if(!isPremium&&currentRsi>=29&&currentRsi<=42){
 let ictData=getICTAdvanced(klines);
 if(ictData.isICT||ictData.isGoldenICT){
 isICT=ictData.isICT;isGoldenICT=ictData.isGoldenICT;
-if(checkPremiumICT(klines)){isPremium=true;premiumType="ICT";isICT=false;isGoldenICT=false;let lastNotified=premiumIctNotified[symbol]||0;if(Date.now()-lastNotified>3600000){notifyUser(`Premium ICT: ${symbol}`,`Support Held. Setup Detected!`,false);premiumIctNotified[symbol]=Date.now();}}
+if(checkPremiumICT(klines)){isPremium=true;premiumType="ICT";isICT=false;isGoldenICT=false;let lastNotified=premiumIctNotified[symbol]||0;if(Date.now()-lastNotified>3600000){notifyUser(`Premium ICT: ${symbol}`,`Support Held (Sideways). Setup Detected!`,false);premiumIctNotified[symbol]=Date.now();}}
 }
 }
 if(!isPremium&&!isV1&&!isGolden&&!isICT&&!isGoldenICT){
@@ -166,7 +165,7 @@ if(activeTrades[symbol]){let t=activeTrades[symbol];let gain=((currentClose-t.pr
 return{name:symbol.replace('USDT',''),symbol:symbol,rsi:currentRsi,change:changePercent,isPremium:isPremium,premiumType:premiumType,isICT:isICT,isGoldenICT:isGoldenICT,isV1:isV1,isGolden:isGolden,isHiddenBullish:isHiddenBullish,isOversold:isOversold};
 }catch(e){return null;}
 });
-const results=await Promise.all(promises);coinsData.push(...results.filter(r=>r!==null));await delay(200);
+const results=await Promise.all(promises);coinsData.push(...results.filter(r=>r!==null));await delay(150);
 }
 localStorage.setItem('scalpTradesV3',JSON.stringify(activeTrades));localStorage.setItem('premiumIctNotified',JSON.stringify(premiumIctNotified));
 refreshCounter++;if(refreshCounter>=5){renderDashboard(coinsData);refreshCounter=0;document.getElementById('update-time').innerText=`Live - Sorted at ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;}else{renderDashboard(coinsData);}
@@ -207,3 +206,4 @@ ordersList.innerHTML=ordersHTML;
 document.getElementById('loading').style.display='none';document.getElementById('dashboard').style.display='block';
 }
 initDashboard();setInterval(()=>{refreshRSIValues(false);},60000);
+  
