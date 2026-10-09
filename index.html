@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scalp Master - Algo Premium V4</title>
+<title>Scalp Master</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
 body{background-color:#0b0e11;color:#eaecef;padding:20px;padding-bottom:50px;}
@@ -55,7 +55,7 @@ body{background-color:#0b0e11;color:#eaecef;padding:20px;padding-bottom:50px;}
 </head>
 <body>
 <div class="header">
-<h1>Scalp <span>Premium Algo V4</span></h1>
+<h1>Scalp <span>Master</span></h1>
 <div class="controls">
 <div class="status" id="status-indicator"><div class="status-dot"></div><span id="update-time">System Ready</span></div>
 <button class="btn" onclick="initDashboard()">🔄 Rescan</button>
@@ -68,10 +68,11 @@ body{background-color:#0b0e11;color:#eaecef;padding:20px;padding-bottom:50px;}
 <div class="category" id="cat-ict"><div class="category-header"><div class="category-title"><h2>🔮 Standard ICT</h2></div><span class="coin-count" id="count-ict">0 coins</span></div><div class="grid" id="grid-ict"></div></div>
 <div class="category" id="cat-golden"><div class="category-header"><div class="category-title"><h2>🌟 Golden Setup (1H/1D Up + Mom & Golden ICT)</h2></div><span class="coin-count" id="count-golden">0 coins</span></div><div class="grid" id="grid-golden"></div></div>
 <div class="category" id="cat-v1"><div class="category-header"><div class="category-title"><h2>⚡ Standard V1 Method (RSI 50-60 + Green HA)</h2></div><span class="coin-count" id="count-v1">0 coins</span></div><div class="grid" id="grid-v1"></div></div>
-<div class="category" id="cat-bullish"><div class="category-header"><div class="category-title"><h2>🔍 Hidden Bullish (Strict Divergence 30-41.99)</h2></div><span class="coin-count" id="count-bullish">0 coins</span></div><div class="grid" id="grid-bullish"></div></div>
+<div class="category" id="cat-bullish"><div class="category-header"><div class="category-title"><h2>🔍 Hidden Bullish Divergence (RSI 30-41.99)</h2></div><span class="coin-count" id="count-bullish">0 coins</span></div><div class="grid" id="grid-bullish"></div></div>
 <div class="category" id="cat-oversold"><div class="category-header"><div class="category-title"><h2>📉 Oversold (RSI 10-29.99)</h2></div><span class="coin-count" id="count-oversold">0 coins</span></div><div class="grid" id="grid-oversold"></div></div>
 </div>
-  <script>
+
+<script>
 let trackedSymbols=[];
 let refreshCounter=5;
 function requestNotificationPermission(){if("Notification" in window){Notification.requestPermission().then(permission=>{if(permission==="granted")alert("Notifications Enabled!");});}}
@@ -111,11 +112,11 @@ let currentO=smoothHaO[smoothHaO.length-1],currentC=smoothHaC[smoothHaC.length-1
 return currentC>currentO;
 }
 
-// 👑 NEW ADVANCED ICT STRICT LOGIC
+// 👑 STRICT ICT LOGIC (With Body Cross Check & 1% Waves)
 function getICTAdvanced(klines){
 if(klines.length<30)return{isICT:false,isGoldenICT:false,isPremiumICT:false};
 let i=klines.length-1;
-const isGreen=(idx)=>parseFloat(klines[idx][4])>parseFloat(klines[idx][1]);
+const isGreen=(idx)=>parseFloat(klines[idx][4])>=parseFloat(klines[idx][1]);
 const getHigh=(idx)=>parseFloat(klines[idx][2]);
 const getLow=(idx)=>parseFloat(klines[idx][3]);
 const getBodyLow=(idx)=>Math.min(parseFloat(klines[idx][1]),parseFloat(klines[idx][4]));
@@ -123,33 +124,48 @@ const getBodyLow=(idx)=>Math.min(parseFloat(klines[idx][1]),parseFloat(klines[id
 let currentCandleGreen=isGreen(i);
 let elapsedMins=(Date.now()-klines[i][0])/60000;
 
-let k=i-1;
-if(isGreen(k))return{isICT:false,isGoldenICT:false,isPremiumICT:false}; // Must end with Red before current
-
-let gap2MinLow=Infinity,gap2MinIdx=-1;
-while(k>=0&&!isGreen(k)){if(getLow(k)<gap2MinLow){gap2MinLow=getLow(k);gap2MinIdx=k;}k--;}
-if(k<0)return{isICT:false,isGoldenICT:false,isPremiumICT:false};
-
+// Current candle is wave 2 end. Find start of wave 2 (Red candle before current greens)
+let k=i;
 let w2High=getHigh(k),w2Low=getLow(k);
-while(k>=0&&isGreen(k)){w2High=Math.max(w2High,getHigh(k));w2Low=Math.min(w2Low,getLow(k));k--;}
+while(k>=0&&isGreen(k)){
+    w2High=Math.max(w2High,getHigh(k));
+    w2Low=Math.min(w2Low,getLow(k));
+    k--;
+}
+if(k<0)return{isICT:false,isGoldenICT:false,isPremiumICT:false};
+let gap2Idx=k;
+let gap2MinLow=getLow(k); // Current Red Wick
+
+// Calculate 1st green wave percentage
 let wave2Percent=((w2High-w2Low)/w2Low)*100;
-if(wave2Percent<1.0)return{isICT:false,isGoldenICT:false,isPremiumICT:false}; // 1st Green wave strict 1%
+if(wave2Percent<1.0)return{isICT:false,isGoldenICT:false,isPremiumICT:false};
 
-let gap1MinLow=Infinity,gap1MinIdx=-1;
-while(k>=0&&!isGreen(k)){if(getLow(k)<gap1MinLow){gap1MinLow=getLow(k);gap1MinIdx=k;}k--;}
-if(gap1MinIdx===-1)return{isICT:false,isGoldenICT:false,isPremiumICT:false};
-
+// Now find start of wave 1 (Red candle before previous greens)
+k--; // Move past the red candle
 let w1High=getHigh(k),w1Low=getLow(k);
-while(k>=0&&isGreen(k)){w1High=Math.max(w1High,getHigh(k));w1Low=Math.min(w1Low,getLow(k));k--;}
-let wave1Percent=((w1High-w1Low)/w1Low)*100;
-if(wave1Percent<1.0)return{isICT:false,isGoldenICT:false,isPremiumICT:false}; // 2nd Green wave strict 1%
+while(k>=0&&isGreen(k)){
+    w1High=Math.max(w1High,getHigh(k));
+    w1Low=Math.min(w1Low,getLow(k));
+    k--;
+}
+if(k<0)return{isICT:false,isGoldenICT:false,isPremiumICT:false};
+let gap1Idx=k;
+let gap1MinLow=getLow(k); // Previous Red Wick
 
-// Trendline check for Premium
+// Calculate 2nd green wave percentage
+let wave1Percent=((w1High-w1Low)/w1Low)*100;
+if(wave1Percent<1.0)return{isICT:false,isGoldenICT:false,isPremiumICT:false};
+
+// 📐 WICK-TO-WICK TRENDLINE BODY CROSS CHECK
 let trendlineBroken=false;
-let slope=(gap2MinLow-gap1MinLow)/(gap2MinIdx-gap1MinIdx);
-for(let j=gap1MinIdx+1;j<=gap2MinIdx;j++){
-let expectedY=gap1MinLow+slope*(j-gap1MinIdx);
-if(getBodyLow(j)<expectedY){trendlineBroken=true;break;}
+let slope=(gap2MinLow-gap1MinLow)/(gap2Idx-gap1Idx);
+for(let j=gap1Idx+1;j<=gap2Idx;j++){
+    let trendlineY=gap1MinLow+slope*(j-gap1Idx);
+    // Agar kisi candle ki BODY (Open/Close) trendline se neechay aayi, to reject.
+    if(getBodyLow(j)<trendlineY){
+        trendlineBroken=true;
+        break;
+    }
 }
 
 let isPremium=currentCandleGreen&&!trendlineBroken;
@@ -158,16 +174,41 @@ let isGolden=currentCandleGreen&&(elapsedMins>=5);
 return{isICT:true,isGoldenICT:isGolden,isPremiumICT:isPremium};
 }
 
-// 🔍 NEW STRICT DIVERGENCE LOGIC (Market Down, RSI Up)
+// 🔍 STRICT DIVERGENCE (Price Lower Low, RSI Higher Low)
 function checkRsiDivergence(klines,rsiArr){
-let currIdx=klines.length-1;let currentLow=parseFloat(klines[currIdx][3]);let currentRsi=rsiArr[rsiArr.length-1];
-let prevLow=Infinity,prevIdx=-1;
-for(let i=currIdx-25;i<=currIdx-5;i++){if(i<0)continue;let l=parseFloat(klines[i][3]);if(l<prevLow){prevLow=l;prevIdx=i;}}
-if(prevIdx!==-1){
-let rsiOffset=rsiArr.length-klines.length;let prevRsi=rsiArr[prevIdx+rsiOffset];
-if(currentLow<prevLow&&currentRsi>prevRsi)return true; // Strictly Price LL and RSI HL
+let currIdx=klines.length-1;
+let currentLow=parseFloat(klines[currIdx][3]);
+let currentRsi=rsiArr[rsiArr.length-1];
+let isGreen=parseFloat(klines[currIdx][4])>=parseFloat(klines[currIdx][1]);
+let elapsedMins=(Date.now()-klines[currIdx][0])/60000;
+
+// Find previous significant swing low
+let prevSwingLow=Infinity,prevSwingIdx=-1;
+for(let i=currIdx-20;i<=currIdx-5;i++){
+    if(i<0)continue;
+    let l=parseFloat(klines[i][3]);
+    let lPrev=parseFloat(klines[i-1][3]);
+    let lNext=parseFloat(klines[i+1][3]);
+    
+    // Identifies a pivot/swing low point
+    if(l<lPrev&&l<lNext){
+        if(l<prevSwingLow){
+            prevSwingLow=l;
+            prevSwingIdx=i;
+        }
+    }
 }
-return false;
+
+if(prevSwingIdx!==-1){
+    let rsiOffset=rsiArr.length-klines.length;
+    let prevRsi=rsiArr[prevSwingIdx+rsiOffset];
+    
+    // STRICT RULE: Market Low Must be LOWER, RSI Must be HIGHER
+    if(currentLow<prevSwingLow&&currentRsi>prevRsi){
+        return{isDiv:true,isConfirmed:(isGreen&&elapsedMins>=5)};
+    }
+}
+return{isDiv:false,isConfirmed:false};
 }
 
 const delay=ms=>new Promise(res=>setTimeout(res,ms));
@@ -215,6 +256,7 @@ let sha1H=getSmoothedHACurrentState(klines);
 let isPremium=false,premiumType="";
 let isICT=false,isGoldenICT=false,isV1=false,isGolden=false,isHiddenBullish=false,isOversold=false;
 
+// V1 & GOLDEN LOGIC
 if(currentRsi>=50&&currentRsi<=60&&sha1H){
 let chancePremiumV1=(currentRsi>=53&&currentRsi<57)&&(currentRsi>prevRsi)&&is1HTrendUp;
 if(chancePremiumV1&&await checkDailyTrend(symbol)){
@@ -227,6 +269,7 @@ else{isV1=true;}
 }
 }
 
+// ICT LOGIC
 if(!isPremium&&currentRsi>=29&&currentRsi<=42){
 let ictData=getICTAdvanced(klines);
 if(ictData.isPremiumICT){isPremium=true;premiumType="ICT";}
@@ -234,11 +277,15 @@ else if(ictData.isGoldenICT){isGoldenICT=true;}
 else if(ictData.isICT){isICT=true;}
 }
 
+// DIVERGENCE LOGIC
 if(!isPremium&&!isV1&&!isGolden&&!isICT&&!isGoldenICT){
 if(currentRsi>=30&&currentRsi<=42){
-if(checkRsiDivergence(klines,rsiArr)){isHiddenBullish=true;}
+let divData=checkRsiDivergence(klines,rsiArr);
+if(divData.isConfirmed){isPremium=true;premiumType="Divergence";}
+else if(divData.isDiv){isHiddenBullish=true;}
 }else if(currentRsi>=10&&currentRsi<30){isOversold=true;}
 }
+
 return{name:symbol.replace('USDT',''),symbol:symbol,rsi:currentRsi,change:changePercent,isPremium:isPremium,premiumType:premiumType,isICT:isICT,isGoldenICT:isGoldenICT,isV1:isV1,isGolden:isGolden,isHiddenBullish:isHiddenBullish,isOversold:isOversold};
 }catch(e){return null;}
 });
@@ -278,4 +325,3 @@ initDashboard();setInterval(()=>{refreshRSIValues(false);},60000);
 </script>
 </body>
 </html>
-
